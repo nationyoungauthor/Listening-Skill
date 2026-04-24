@@ -361,106 +361,292 @@ const Home = () => {
 };
 
 const Courses = () => {
-  const allCourses = [
-    { title: "Advanced React Patterns", category: "Programming", img: progImg, reviews: "4.9", students: "1.2k" },
-    { title: "Graphic Design Masterclass", category: "Design", img: designImg, reviews: "4.8", students: "3.5k" },
-    { title: "SEO Strategy 2026", category: "Marketing", img: heroImg, reviews: "4.7", students: "2.1k" },
-    { title: "Node.js Backend Architecture", category: "Programming", img: progImg, reviews: "4.9", students: "1.2k" },
-    { title: "UI Components with Tailwind", category: "Design", img: designImg, reviews: "5.0", students: "5.5k" },
-    { title: "Social Media Hero", category: "Marketing", img: heroImg, reviews: "4.6", students: "4.1k" }
-  ];
+  const [selectedClass, setSelectedClass] = useState(null);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [selectedChapter, setSelectedChapter] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const classesList = ['NC', 'LKG', 'UKG', 'Class I', 'Class II', 'Class III', 'Class IV', 'Class V', 'Class VI', 'Class VII', 'Class VIII', 'Class IX', 'Class X'];
+  
+  const getSubjects = (cls) => {
+    const allSubs = {
+      'English Phonics': { name: 'English Phonics', icon: BookOpen, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+      'Number Work': { name: 'Number Work', icon: LayoutGrid, color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+      'General Awareness': { name: 'General Awareness', icon: Globe, color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-500/20' },
+      'Rhymes & Stories': { name: 'Rhymes & Stories', icon: Headphones, color: 'text-pink-500', bg: 'bg-pink-500/10', border: 'border-pink-500/20' },
+      
+      'English Literature': { name: 'English Literature', icon: BookOpen, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+      'Environmental Science': { name: 'Environmental Science', icon: Globe, color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-500/20' },
+      'Mathematics': { name: 'Mathematics', icon: LayoutGrid, color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+      'Social Studies': { name: 'Social Studies', icon: Users, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+      'Computer Basics': { name: 'Computer Basics', icon: Code, color: 'text-pink-500', bg: 'bg-pink-500/10', border: 'border-pink-500/20' },
+      'Science': { name: 'Science', icon: Brain, color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-500/20' },
+      
+      'Physics': { name: 'Physics', icon: Rocket, color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20' },
+      'Chemistry': { name: 'Chemistry', icon: Filter, color: 'text-teal-500', bg: 'bg-teal-500/10', border: 'border-teal-500/20' },
+      'Biology': { name: 'Biology', icon: Globe, color: 'text-green-600', bg: 'bg-green-600/10', border: 'border-green-600/20' },
+      'History & Civics': { name: 'History & Civics', icon: Users, color: 'text-orange-600', bg: 'bg-orange-600/10', border: 'border-orange-600/20' }
+    };
+
+    if (['NC', 'LKG', 'UKG'].includes(cls)) {
+      return [allSubs['English Phonics'], allSubs['Number Work'], allSubs['General Awareness'], allSubs['Rhymes & Stories']];
+    } else if (['Class I', 'Class II', 'Class III', 'Class IV', 'Class V'].includes(cls)) {
+      return [allSubs['English Literature'], allSubs['Environmental Science'], allSubs['Mathematics'], allSubs['Computer Basics']];
+    } else if (['Class VI', 'Class VII', 'Class VIII'].includes(cls)) {
+      return [allSubs['English Literature'], allSubs['Science'], allSubs['Mathematics'], allSubs['Social Studies'], allSubs['Computer Basics']];
+    } else {
+      return [allSubs['English Literature'], allSubs['Physics'], allSubs['Chemistry'], allSubs['Biology'], allSubs['Mathematics'], allSubs['History & Civics']];
+    }
+  };
+
+  const getChapters = (cls, subName) => {
+    let level = 'middle';
+    if (['NC', 'LKG', 'UKG'].includes(cls)) level = 'junior';
+    else if (['Class I', 'Class II', 'Class III', 'Class IV', 'Class V'].includes(cls)) level = 'primary';
+    else if (['Class IX', 'Class X'].includes(cls)) level = 'senior';
+
+    const db = {
+      'English Phonics': { junior: ['A for Apple', 'Vowel Sounds', 'Consonants', 'CVC Words', 'Rhyming Words', 'Sight Words', 'Blending Sounds', 'Short Sentences'] },
+      'Number Work': { junior: ['Counting 1 to 10', 'Number Names', 'Shapes Around Us', 'Big and Small', 'Addition Basics', 'Subtraction Basics', 'Patterns', 'Time Basics'] },
+      'General Awareness': { junior: ['My Body Parts', 'My Family', 'Colors', 'Animals and Birds', 'Fruits and Vegetables', 'Seasons', 'Transport', 'Good Habits'] },
+      'Rhymes & Stories': { junior: ['Twinkle Twinkle', 'Johny Johny', 'The Thirsty Crow', 'The Greedy Dog', 'Baa Baa Black Sheep', 'The Lion and Mouse', 'Humpty Dumpty', 'Jack and Jill'] },
+      
+      'English Literature': {
+        primary: ['The Lost Sheep', 'Grammar: Nouns', 'The Magic Tree', 'Poem: The Wind', 'Adjectives', 'Tenses', 'The Hidden Treasure', 'Comprehension'],
+        middle: ['Grammar: Adverbs', 'The Clever Fox', 'Poem: The Daffodils', 'Essay Writing', 'Active & Passive Voice', 'Literature Analysis', 'Short Stories', 'Letter Writing'],
+        senior: ['Shakespearean Sonnets', 'Advanced Grammar', 'The Diary of a Young Girl', 'Poetic Devices', 'Debate and Speech', 'The Road Not Taken', 'Creative Writing', 'Figures of Speech']
+      },
+      'Environmental Science': {
+        primary: ['Plants and Trees', 'Water is Life', 'Our Earth', 'Day and Night', 'Seasons and Weather', 'Animals Around Us', 'Food We Eat', 'Air and Water']
+      },
+      'Science': {
+        middle: ['States of Matter', 'The Solar System', 'Force and Energy', 'Living Organisms', 'Human Body Systems', 'Light and Shadows', 'Ecosystems', 'Rocks and Minerals']
+      },
+      'Mathematics': {
+        primary: ['Addition & Subtraction', 'Multiplication Tables', 'Division Basics', 'Fractions', 'Time and Clocks', 'Money', 'Measurement', 'Data Handling'],
+        middle: ['Decimals', 'Geometry Basics', 'Area and Perimeter', 'Ratio and Proportion', 'Integers', 'Algebra Basics', 'Statistics', 'Simple Equations'],
+        senior: ['Algebraic Expressions', 'Trigonometry', 'Quadratic Equations', 'Probability', 'Coordinate Geometry', 'Surface Area & Volume', 'Polynomials', 'Linear Equations']
+      },
+      'Social Studies': {
+        middle: ['The Earth and Solar System', 'Early Civilizations', 'Local Government', 'The Mughal Empire', 'Latitudes & Longitudes', 'Democracy', 'Resources', 'The Freedom Struggle']
+      },
+      'History & Civics': {
+        senior: ['The French Revolution', 'World War II', 'Indian Constitution', 'Democracy in Action', 'Nationalism in Europe', 'The UN', 'Parliamentary System', 'Fundamental Rights']
+      },
+      'Computer Basics': {
+        primary: ['Parts of a Computer', 'Using the Mouse', 'Keyboard Basics', 'MS Paint Fun', 'What is the Internet?', 'Rules of the Lab', 'Typing Practice', 'Smart Devices'],
+        middle: ['Introduction to Word', 'Making Presentations', 'Internet Safety', 'Basics of Scratch', 'Algorithm Logic', 'Spreadsheets', 'Input and Output', 'History of Computers']
+      },
+      'Physics': {
+        senior: ['Laws of Motion', 'Gravitation', 'Work and Energy', 'Sound Waves', 'Light Reflection', 'Electricity', 'Magnetic Effects', 'Sources of Energy']
+      },
+      'Chemistry': {
+        senior: ['Matter in Our Surroundings', 'Atoms and Molecules', 'Structure of the Atom', 'Chemical Reactions', 'Acids, Bases & Salts', 'Metals & Non-metals', 'Carbon Compounds', 'Periodic Classification']
+      },
+      'Biology': {
+        senior: ['The Fundamental Unit of Life', 'Tissues', 'Diversity in Living Organisms', 'Life Processes', 'Control and Coordination', 'Reproduction', 'Heredity and Evolution', 'Our Environment']
+      }
+    };
+
+    const chapterTitles = db[subName]?.[level] || db[subName]?.['primary'] || db[subName]?.['senior'] || db['English Literature']['primary'];
+
+    return chapterTitles.map((title, i) => ({
+      id: i + 1,
+      title: title,
+      desc: `Master the concepts of ${title} through our interactive audio lesson for ${cls}.`,
+      content: `Welcome to ${subName} for ${cls}. Today's chapter is ${title}. Please listen carefully. ${title} is a fundamental topic in this subject. Let's begin the interactive lesson.`
+    }));
+  };
+
+  const stopAudio = () => {
+    if(window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setIsPlaying(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => stopAudio();
+  }, []);
+
+  const togglePlay = (chapter) => {
+    if(isPlaying) {
+      stopAudio();
+    } else {
+      if(window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(chapter.content);
+        u.rate = 0.85; // Slightly slower for better listening comprehension
+        u.onend = () => setIsPlaying(false);
+        window.speechSynthesis.speak(u);
+        setIsPlaying(true);
+      }
+    }
+  };
 
   return (
-    <div className="pt-24 pb-20 px-4 max-w-7xl mx-auto">
-      <div className="mb-12">
-        <h1 className="text-4xl font-bold text-white mb-4">Explore Our Courses</h1>
-        <p className="text-slate-400">Find the perfect course to upgrade your professional skills.</p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {allCourses.map((c, i) => <SkillCard key={i} {...c} />)}
-      </div>
+    <div className="pt-24 pb-20 px-4 max-w-7xl mx-auto min-h-[80vh]">
+      {!selectedClass && (
+        <>
+          <div className="mb-12 border-b border-slate-900 pb-8 text-center md:text-left">
+            <div className="inline-flex items-center gap-2 bg-blue-600/10 text-blue-500 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4 border border-blue-500/20">
+              <GraduationCap className="w-3 h-3" /> Academic Curriculum
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">Select Your Class</h1>
+            <p className="text-slate-400 text-lg">Choose your academic level to access dedicated listening chapters.</p>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {classesList.map(cls => (
+              <button 
+                key={cls}
+                onClick={() => setSelectedClass(cls)}
+                className="bg-slate-900 hover:bg-blue-600 border border-slate-800 hover:border-blue-400 rounded-2xl p-6 text-center transition-all group shadow-lg hover:shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:-translate-y-1"
+              >
+                <div className="text-2xl font-black text-white group-hover:text-white transition-colors">{cls}</div>
+                <div className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 group-hover:text-blue-100 transition-colors">Syllabus</div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {selectedClass && !selectedSubject && (
+        <>
+          <div className="mb-12 border-b border-slate-900 pb-8 flex items-center gap-6">
+            <button onClick={() => setSelectedClass(null)} className="bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-xl transition-all shadow-lg">
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <div>
+              <div className="text-blue-500 font-bold text-sm tracking-widest uppercase mb-1">{selectedClass}</div>
+              <h1 className="text-4xl font-black text-white tracking-tight">Choose Subject</h1>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {getSubjects(selectedClass).map(sub => (
+              <button 
+                key={sub.name}
+                onClick={() => setSelectedSubject(sub)}
+                className="bg-slate-900 border border-slate-800 hover:border-slate-600 rounded-3xl p-8 text-left transition-all hover:-translate-y-1 group"
+              >
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 border ${sub.bg} ${sub.border}`}>
+                  <sub.icon className={`w-8 h-8 ${sub.color}`} />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">{sub.name}</h3>
+                <p className="text-slate-400 text-sm">8 Chapters available for listening</p>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {selectedClass && selectedSubject && !selectedChapter && (
+        <>
+          <div className="mb-12 border-b border-slate-900 pb-8 flex items-center gap-6">
+            <button onClick={() => setSelectedSubject(null)} className="bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-xl transition-all shadow-lg">
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <div>
+              <div className="text-blue-500 font-bold text-sm tracking-widest uppercase mb-1">{selectedClass} • {selectedSubject.name}</div>
+              <h1 className="text-4xl font-black text-white tracking-tight">Listening Chapters</h1>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {getChapters(selectedClass, selectedSubject.name).map(chap => (
+              <div key={chap.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-between hover:border-blue-500/50 transition-colors group">
+                <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 bg-slate-950 rounded-xl flex items-center justify-center font-black text-slate-500 border border-slate-800 group-hover:text-blue-500 group-hover:border-blue-500/30 transition-colors">
+                     {chap.id}
+                   </div>
+                   <div>
+                     <h4 className="text-lg font-bold text-white">{chap.title}</h4>
+                     <p className="text-slate-400 text-sm">{chap.desc}</p>
+                   </div>
+                </div>
+                <button 
+                  onClick={() => setSelectedChapter(chap)}
+                  className="bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-lg"
+                >
+                  <Headphones className="w-5 h-5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {selectedClass && selectedSubject && selectedChapter && (
+        <div className="max-w-3xl mx-auto">
+          <button onClick={() => { setSelectedChapter(null); stopAudio(); }} className="mb-8 flex items-center gap-2 text-slate-400 hover:text-white font-bold transition-colors">
+            <ArrowLeft className="w-5 h-5" /> Back to Chapters
+          </button>
+          
+          <div className="bg-slate-900 border border-slate-800 rounded-[3rem] p-8 md:p-12 text-center shadow-2xl relative overflow-hidden">
+            <div className={`absolute inset-0 bg-blue-500/5 transition-opacity duration-700 ${isPlaying ? 'opacity-100' : 'opacity-0'}`}></div>
+            
+            <div className={`w-32 h-32 mx-auto rounded-full flex items-center justify-center mb-8 border-4 transition-all duration-500 relative z-10 ${isPlaying ? 'bg-blue-500/20 border-blue-500 text-blue-500 shadow-[0_0_50px_rgba(37,99,235,0.4)]' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>
+               <Headphones className={`w-16 h-16 transition-transform ${isPlaying ? 'animate-bounce' : ''}`} />
+            </div>
+            
+            <div className="relative z-10">
+              <div className="text-blue-500 font-bold tracking-widest uppercase text-sm mb-2">{selectedClass} • {selectedSubject.name}</div>
+              <h2 className="text-4xl font-black text-white mb-8">{selectedChapter.title}</h2>
+              
+              <p className="text-slate-400 text-lg leading-relaxed mb-10 max-w-xl mx-auto">
+                Press play to begin the listening module. Focus on the pronunciation and the concepts being explained in this chapter.
+              </p>
+              
+              <button 
+                onClick={() => togglePlay(selectedChapter)}
+                className={`flex items-center justify-center gap-3 w-full md:w-auto mx-auto px-12 py-5 rounded-2xl font-black text-xl transition-all shadow-xl active:scale-95 ${isPlaying ? 'bg-red-500/10 text-red-500 border border-red-500 hover:bg-red-500/20' : 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-500/30 hover:shadow-[0_0_30px_rgba(37,99,235,0.5)]'}`}
+              >
+                {isPlaying ? (
+                  <><Square className="w-6 h-6 fill-current" /> Stop Audio</>
+                ) : (
+                  <><Play className="w-6 h-6 fill-current" /> Start Listening</>
+                )}
+              </button>
+              
+              {isPlaying && (
+                <div className="mt-10 flex justify-center gap-1.5 h-12 items-end">
+                  {[...Array(20)].map((_, i) => (
+                    <div 
+                      key={i} 
+                      className="w-2 bg-blue-500 rounded-t-full animate-pulse" 
+                      style={{ height: `${Math.random() * 40 + 10}px`, animationDelay: `${i * 0.05}s` }}
+                    ></div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 const Games = () => {
-  const [selectedClass, setSelectedClass] = useState('');
-  const [selectedAge, setSelectedAge] = useState('');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('');
+  const allGames = [
+    { id: 'g1', title: 'Audio Memory Match', category: 'Memory', difficulty: 'Beginner', img: mathGameImg },
+    { id: 'g2', title: 'Word Listener', category: 'Word Games', difficulty: 'Beginner', img: logicGameImg },
+    { id: 'g3', title: 'Dictation Hero', category: 'Word Games', difficulty: 'Intermediate', img: codingGameImg },
+    { id: 'g4', title: 'Sound Scramble', category: 'Puzzle', difficulty: 'Intermediate', img: heroImg },
+    { id: 'g5', title: 'Phonics Pop', category: 'Arcade', difficulty: 'Beginner', img: progImg },
+    { id: 'g6', title: 'Listen & Find', category: 'Logic', difficulty: 'Beginner', img: designImg },
+    { id: 'g7', title: 'Story Echoes', category: 'Memory', difficulty: 'Intermediate', img: mathGameImg },
+    { id: 'g8', title: 'Sentence Builder', category: 'Strategy', difficulty: 'Advanced', img: logicGameImg },
+    { id: 'g9', title: 'Pattern Recall', category: 'Brain Training', difficulty: 'Advanced', img: codingGameImg },
+    { id: 'g10', title: 'Quantum Audio', category: 'Logic', difficulty: 'Expert', img: designImg }
+  ].map(game => ({
+    ...game,
+    classLevel: 'All Levels',
+    rating: (4.5 + Math.random() * 0.5).toFixed(1)
+  }));
 
-  const classes = ['Class I', 'Class II', 'Class III', 'Class IV', 'Class V', 'Class VI', 'Class VII', 'Class VIII', 'Class IX', 'Class X'];
-  const ages = ['5-7 years', '8-10 years', '11-13 years', '14-16 years', '16+ years'];
-  const difficulties = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
-  const categories = ['Puzzle', 'Strategy', 'Memory', 'Logic', 'Arcade', 'Brain Training', 'Patterns', 'Word Games', 'Tactical', 'Quick Math'];
-
-  // Helper to get age from class index
-  const getAgeByClass = (idx) => {
-    if (idx < 2) return '5-7 years';
-    if (idx < 4) return '8-10 years';
-    if (idx < 6) return '11-13 years';
-    if (idx < 8) return '14-16 years';
-    return '16+ years';
-  };
-
-  // Helper to get game titles based on class level (making them feel like real listening games)
-  const getGameTitle = (classIdx, gameIdx, cat) => {
-    // Junior Classes (I - III)
-    if (classIdx < 3) {
-      const juniorGames = ['Audio Memory Match', 'Word Listener', 'Sound Scramble', 'Phonics Pop', 'Listen & Find', 'Story Echoes', 'Vowel Catch', 'Audio Bear Logic', 'Ocean Sound Match', 'Tone Connect'];
-      return juniorGames[gameIdx - 1] || `${cat} Audio Fun`;
-    }
-    // Middle Classes (IV - VII)
-    if (classIdx < 7) {
-      const middleGames = ['Dictation Hero', 'Audio Maze Runner', 'Word Search (Audio)', 'Pattern Recall', 'Sentence Builder', 'Vocal Traffic', 'Accent Defense', 'Crossword (Speech)', 'Hidden Sound', 'Logic Grid (Listen)'];
-      return middleGames[gameIdx - 1] || `${cat} Audio Quest`;
-    }
-    // Senior Classes (VIII - X)
-    const seniorGames = ['Quantum Audio', 'Grand Debate', 'Code Breaker (Speech)', 'Neural Link (Sound)', 'Market Sim (Calls)', 'Command Center (Radio)', 'Ethical Hacker (Wiretap)', 'Resource Manager', 'Parallel Logic (Tone)', 'Chess Mastermind (Voice)'];
-    return seniorGames[gameIdx - 1] || `${cat} Audio Legend`;
-  };
-
-  // Helper to get unique image for each game using category keywords and a seed
-  const getImgForGame = (cat, id) => {
-    const keyMap = {
-      'Puzzle': 'toy,blocks', 'Strategy': 'chess,board', 'Memory': 'brain,memory', 'Logic': 'maze,gear',
-      'Arcade': 'joystick,retro', 'Brain Training': 'mind,focus', 'Patterns': 'candy,pattern',
-      'Word Games': 'alphabet,book', 'Tactical': 'target,map', 'Quick Math': 'numbers,neon'
-    };
-    const keyword = keyMap[cat] || 'game';
-    return `https://loremflickr.com/800/600/${encodeURIComponent(keyword)}?lock=${id}`;
-  };
-
-  // Generate 100 games (10 per class)
-  const allGames = useMemo(() => {
-    const list = [];
-    classes.forEach((cLevel, cIdx) => {
-      for (let i = 1; i <= 10; i++) {
-        const cat = categories[(i + cIdx) % categories.length];
-        const gId = `${cLevel.replace(' ','')}-${i}`;
-        list.push({
-          id: gId,
-          title: getGameTitle(cIdx, i, cat),
-          category: cat,
-          img: getImgForGame(cat, gId),
-          classLevel: cLevel,
-          ageGroup: getAgeByClass(cIdx),
-          difficulty: difficulties[i % 4],
-          level: i, // Adding game level 1-10
-          rating: (4.5 + Math.random() * 0.5).toFixed(1)
-        });
-      }
-    });
-    return list;
-  }, []);
-
-  const filteredGames = useMemo(() => {
-    return allGames.filter(game => {
-      const matchClass = selectedClass === '' || game.classLevel === selectedClass;
-      const matchAge = selectedAge === '' || game.ageGroup === selectedAge;
-      const matchDiff = selectedDifficulty === '' || game.difficulty === selectedDifficulty;
-      return matchClass && matchAge && matchDiff;
-    });
-  }, [selectedClass, selectedAge, selectedDifficulty, allGames]);
+  const filteredGames = allGames;
 
   // -- Playable Games Logic --
   const [activeGame, setActiveGame] = useState(null);
@@ -904,85 +1090,14 @@ const Games = () => {
             <Trophy className="w-3 h-3" /> Skill Development Games
           </div>
           <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Level-Up Academy</h1>
-          <p className="text-slate-400">Master 100+ skills through interactive gaming challenges.</p>
+          <p className="text-slate-400">Master your listening skills through 10 highly focused, interactive challenges.</p>
         </div>
         <div className="bg-slate-900/50 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-800 text-xs font-bold text-slate-400">
-          Total Games: <span className="text-white">{allGames.length}</span>
+          Total Games: <span className="text-white">10</span>
         </div>
       </div>
       
-      {/* Selection Area */}
-      <div className="flex flex-wrap gap-4 mb-12 justify-center lg:justify-start">
-        {/* Class Dropdown */}
-        <div className="relative group w-full md:w-56">
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-2 px-1">
-            Filter by Class
-          </label>
-          <div className="relative">
-            <select 
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-xl appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer hover:border-slate-700 transition-all text-sm font-bold shadow-2xl"
-            >
-              <option value="">All Classes (I - X)</option>
-              {classes.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 pointer-events-none" />
-          </div>
-        </div>
 
-        {/* Age Dropdown */}
-        <div className="relative group w-full md:w-56">
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-2 px-1">
-            Filter by Age
-          </label>
-          <div className="relative">
-            <select 
-              value={selectedAge}
-              onChange={(e) => setSelectedAge(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-xl appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer hover:border-slate-700 transition-all text-sm font-bold shadow-2xl"
-            >
-              <option value="">All Age Groups</option>
-              {ages.map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 pointer-events-none" />
-          </div>
-        </div>
-
-        {/* Difficulty Dropdown */}
-        <div className="relative group w-full md:w-56">
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-2 px-1">
-            Select Difficulty
-          </label>
-          <div className="relative">
-            <select 
-              value={selectedDifficulty}
-              onChange={(e) => setSelectedDifficulty(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-xl appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer hover:border-slate-700 transition-all text-sm font-bold shadow-2xl"
-            >
-              <option value="">All Difficulty Levels</option>
-              {difficulties.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 pointer-events-none" />
-          </div>
-        </div>
-
-        {/* Reset Button */}
-        {(selectedClass || selectedAge || selectedDifficulty) && (
-          <div className="flex items-end">
-            <button 
-              onClick={() => { setSelectedClass(''); setSelectedAge(''); setSelectedDifficulty(''); }}
-              className="px-4 py-3 text-xs font-black text-blue-500 hover:text-white transition-colors bg-blue-600/5 rounded-xl border border-blue-600/10"
-            >
-              RESET ALL
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="mb-8 text-sm text-slate-500 italic">
-        Showing <span className="text-blue-500 font-bold">{filteredGames.length}</span> individual games matching your criteria
-      </div>
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
