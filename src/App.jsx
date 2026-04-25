@@ -22,6 +22,17 @@ import designImg from './assets/design.png';
 import mathGameImg from './assets/game_math.png';
 import logicGameImg from './assets/game_logic.png';
 import codingGameImg from './assets/game_coding.png';
+import wordListenerImg from './assets/word_listener.png';
+import dictationHeroImg from './assets/dictation_hero.png';
+import { 
+  SoundScrambleGame, 
+  PhonicsPopGame, 
+  ListenFindGame, 
+  StoryEchoesGame, 
+  SentenceBuilderGame, 
+  PatternRecallGame, 
+  QuantumAudioGame 
+} from './ExtraGames';
 
 // --- Shared Components ---
 
@@ -631,8 +642,8 @@ const Courses = () => {
 const Games = () => {
   const allGames = [
     { id: 'g1', title: 'Audio Memory Match', category: 'Memory', difficulty: 'Beginner', img: mathGameImg },
-    { id: 'g2', title: 'Word Listener', category: 'Word Games', difficulty: 'Beginner', img: logicGameImg },
-    { id: 'g3', title: 'Dictation Hero', category: 'Word Games', difficulty: 'Intermediate', img: codingGameImg },
+    { id: 'g2', title: 'Word Listener', category: 'Word Games', difficulty: 'Beginner', img: wordListenerImg },
+    { id: 'g3', title: 'Dictation Hero', category: 'Word Games', difficulty: 'Intermediate', img: dictationHeroImg },
     { id: 'g4', title: 'Sound Scramble', category: 'Puzzle', difficulty: 'Intermediate', img: heroImg },
     { id: 'g5', title: 'Phonics Pop', category: 'Arcade', difficulty: 'Beginner', img: progImg },
     { id: 'g6', title: 'Listen & Find', category: 'Logic', difficulty: 'Beginner', img: designImg },
@@ -655,35 +666,51 @@ const Games = () => {
     const [level, setLevel] = useState(1);
     const [score, setScore] = useState(0);
     const [sequence, setSequence] = useState([]);
+    const [options, setOptions] = useState([]);
     const [playerTurn, setPlayerTurn] = useState(false);
     const [playerIndex, setPlayerIndex] = useState(0);
-    const [gameStatus, setGameStatus] = useState('waiting'); // 'waiting', 'playing_audio', 'player_turn', 'failed', 'level_clear'
+    const [gameStatus, setGameStatus] = useState('waiting');
     const [currentAudioIndex, setCurrentAudioIndex] = useState(-1);
 
-    const words = ['Apple', 'Cat', 'Dog', 'Bird', 'Sun', 'Moon', 'Tree', 'Book', 'Car', 'Train', 'Ship', 'Star'];
+    const allWords = [
+      'Apple', 'Cat', 'Dog', 'Bird', 'Sun', 'Moon', 'Tree', 'Book', 'Car', 'Train',
+      'Ship', 'Star', 'Cloud', 'Rain', 'Wind', 'Fire', 'Earth', 'Water', 'Ice', 'Snow',
+      'Mountain', 'River', 'Ocean', 'Forest', 'Desert', 'Flower', 'Grass', 'Leaf', 'Root', 'Seed',
+      'Fish', 'Frog', 'Snake', 'Lizard', 'Turtle', 'Bear', 'Wolf', 'Fox', 'Deer', 'Rabbit',
+      'Eagle', 'Hawk', 'Owl', 'Crow', 'Dove', 'Ant', 'Bee', 'Wasp', 'Fly', 'Bug'
+    ];
 
-    const generateSequence = (lvl) => Array.from({length: lvl + 2}).map(() => words[Math.floor(Math.random() * words.length)]);
+    const generateLevel = (lvl) => {
+      const seqLength = Math.min(Math.floor((lvl + 9) / 10) + 1, 8); // Max 8 words
+      const optLength = Math.min(seqLength + 4 + Math.floor(lvl / 10), 16); // Max 16 options
+      
+      const shuffledWords = [...allWords].sort(() => 0.5 - Math.random());
+      const selectedOptions = shuffledWords.slice(0, optLength);
+      
+      const seq = Array.from({length: seqLength}).map(() => selectedOptions[Math.floor(Math.random() * selectedOptions.length)]);
+      
+      return { seq, selectedOptions };
+    };
 
-    const playAudioSequence = (seq) => {
+    const playAudioSequence = (seq, lvl) => {
       setGameStatus('playing_audio');
       setCurrentAudioIndex(-1);
       let i = 0;
       
-      // Store utterances in window array to prevent Chrome garbage collection bugs
       window._audioQueue = window._audioQueue || [];
+      const rate = Math.min(0.8 + (lvl * 0.015), 1.5);
       
       const playNext = () => {
         if (i < seq.length) {
           setCurrentAudioIndex(i);
           if (window.speechSynthesis) {
             const u = new SpeechSynthesisUtterance(seq[i]);
-            u.rate = 0.9;
+            u.rate = rate;
             window._audioQueue.push(u);
             window.speechSynthesis.speak(u);
           }
           i++;
-          // Use hard timeout to bypass browser bugs where onend never fires
-          setTimeout(playNext, 1200);
+          setTimeout(playNext, Math.max(1500 - (lvl * 15), 600));
         } else {
           setCurrentAudioIndex(-1);
           setGameStatus('player_turn');
@@ -694,15 +721,16 @@ const Games = () => {
       playNext();
     };
 
-    const startGame = () => {
+    const startGame = (startLvl = 1) => {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
-      setScore(0);
-      setLevel(1);
-      const seq = generateSequence(1);
+      setScore(s => startLvl === 1 ? 0 : s);
+      setLevel(startLvl);
+      const { seq, selectedOptions } = generateLevel(startLvl);
       setSequence(seq);
+      setOptions(selectedOptions.sort(() => 0.5 - Math.random()));
       setPlayerIndex(0);
       setGameStatus('playing_audio');
-      setTimeout(() => playAudioSequence(seq), 500);
+      setTimeout(() => playAudioSequence(seq, startLvl), 500);
     };
 
     const handleWordClick = (word) => {
@@ -718,7 +746,11 @@ const Games = () => {
         setScore(s => s + 10);
         if (playerIndex + 1 === sequence.length) {
           setPlayerTurn(false);
-          setGameStatus('level_clear');
+          if (level >= 50) {
+            setGameStatus('game_completed');
+          } else {
+            setGameStatus('level_clear');
+          }
         } else {
           setPlayerIndex(playerIndex + 1);
         }
@@ -729,12 +761,7 @@ const Games = () => {
     };
 
     const nextLevel = () => {
-      const nextLvl = level + 1;
-      setLevel(nextLvl);
-      const seq = generateSequence(nextLvl);
-      setSequence(seq);
-      setPlayerIndex(0);
-      setTimeout(() => playAudioSequence(seq), 1000);
+      startGame(level + 1);
     };
 
     React.useEffect(() => {
@@ -753,9 +780,11 @@ const Games = () => {
               <div className="text-4xl font-black">{score}</div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">Level</div>
-            <span className="bg-blue-600 text-white px-6 py-2 rounded-xl text-lg font-black border border-blue-400/30 shadow-[0_0_20px_rgba(37,99,235,0.4)]">LVL {level}</span>
+          <div className="text-right flex flex-col items-end">
+            <div className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">Level {level}/50</div>
+            <div className="w-32 h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
+              <div className="h-full bg-blue-500" style={{width: `${(level/50)*100}%`}}></div>
+            </div>
           </div>
         </div>
 
@@ -763,12 +792,12 @@ const Games = () => {
           <div className="text-center py-20 px-4 bg-slate-950 rounded-[2rem] border border-slate-800">
             <Ear className="w-20 h-20 text-blue-500 mx-auto mb-6 animate-pulse" />
             <h2 className="text-3xl font-black text-white mb-2">Audio Memory Match</h2>
-            <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">Listen carefully to the sequence of spoken words. Once the audio stops, click the words in the exact order you heard them!</p>
-            <button onClick={startGame} className="bg-blue-600 hover:bg-blue-500 text-white px-8 md:px-10 py-4 rounded-xl font-black text-xl flex items-center gap-2 mx-auto shadow-[0_0_30px_rgba(37,99,235,0.4)] transition-transform hover:scale-105"><Play className="fill-current w-5 h-5"/> Start Listening Game</button>
+            <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">Listen carefully to the sequence of spoken words. Progress through 50 increasingly difficult levels. Don't repeat mistakes!</p>
+            <button onClick={() => startGame(1)} className="bg-blue-600 hover:bg-blue-500 text-white px-8 md:px-10 py-4 rounded-xl font-black text-xl flex items-center gap-2 mx-auto shadow-[0_0_30px_rgba(37,99,235,0.4)] transition-transform hover:scale-105"><Play className="fill-current w-5 h-5"/> Start Game</button>
           </div>
         )}
 
-        {gameStatus !== 'waiting' && gameStatus !== 'failed' && gameStatus !== 'level_clear' && (
+        {gameStatus !== 'waiting' && gameStatus !== 'failed' && gameStatus !== 'level_clear' && gameStatus !== 'game_completed' && (
           <div>
             <div className={`mb-8 text-center p-4 rounded-2xl border transition-colors ${gameStatus === 'playing_audio' ? 'bg-orange-500/10 border-orange-500/30 text-orange-400 animate-pulse' : 'bg-green-500/10 border-green-500/30 text-green-400'}`}>
               <div className="text-lg font-black uppercase tracking-widest flex items-center justify-center gap-2">
@@ -776,12 +805,12 @@ const Games = () => {
               </div>
             </div>
             <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
-              {words.map(w => (
+              {options.map((w, idx) => (
                 <button
-                  key={w}
+                  key={idx}
                   onClick={() => handleWordClick(w)}
                   disabled={gameStatus !== 'player_turn'}
-                  className={`aspect-video flex items-center justify-center text-lg md:text-xl font-bold rounded-2xl transition-all border-2 ${gameStatus === 'player_turn' ? 'bg-slate-800 hover:bg-blue-600 border-slate-700 hover:border-blue-400 text-white shadow-xl cursor-pointer active:scale-95' : 'bg-slate-950 border-slate-900 shadow-none text-slate-500 cursor-not-allowed opacity-50'}`}
+                  className={`py-6 flex items-center justify-center text-lg md:text-xl font-bold rounded-2xl transition-all border-2 ${gameStatus === 'player_turn' ? 'bg-slate-800 hover:bg-blue-600 border-slate-700 hover:border-blue-400 text-white shadow-xl cursor-pointer active:scale-95' : 'bg-slate-950 border-slate-900 shadow-none text-slate-500 cursor-not-allowed opacity-50'}`}
                 >
                   {w}
                 </button>
@@ -793,8 +822,8 @@ const Games = () => {
         {gameStatus === 'failed' && (
           <div className="text-center py-20 px-4 bg-slate-950 rounded-[2rem] border border-red-500/30 bg-red-500/5">
             <h2 className="text-4xl font-black text-red-500 mb-2">Memory Failed!</h2>
-            <p className="text-slate-400 mb-8 max-w-md mx-auto">You clicked the wrong word. You reached Level {level} with a score of {score}. Practice your listening skills and try again!</p>
-            <button onClick={startGame} className="bg-red-600 hover:bg-red-500 text-white px-10 py-4 rounded-xl font-black text-xl mx-auto shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform hover:scale-105">Try Again</button>
+            <p className="text-slate-400 mb-8 max-w-md mx-auto">You clicked the wrong word. You reached Level {level} with a score of {score}.</p>
+            <button onClick={() => startGame(1)} className="bg-red-600 hover:bg-red-500 text-white px-10 py-4 rounded-xl font-black text-xl mx-auto shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform hover:scale-105">Restart from Level 1</button>
           </div>
         )}
 
@@ -805,9 +834,22 @@ const Games = () => {
             <button onClick={nextLevel} className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-xl font-black text-xl mx-auto shadow-[0_0_30px_rgba(37,99,235,0.4)] border border-blue-400 transition-transform hover:scale-105">Continue to Level {level + 1}</button>
           </div>
         )}
+        
+        {gameStatus === 'game_completed' && (
+          <div className="text-center py-20 px-4 bg-slate-950 rounded-[2rem] border border-yellow-500/50 shadow-[inset_0_0_100px_rgba(234,179,8,0.2)]">
+            <Trophy className="w-24 h-24 text-yellow-500 mx-auto mb-6" />
+            <h2 className="text-5xl font-black text-yellow-400 mb-4">Champion!</h2>
+            <p className="text-slate-300 text-lg mb-8 max-w-md mx-auto">You have completed all 50 levels of Audio Memory Match! Your final score is {score}. Your listening skills are phenomenal.</p>
+            <button onClick={() => startGame(1)} className="bg-yellow-600 hover:bg-yellow-500 text-white px-10 py-4 rounded-xl font-black text-xl mx-auto shadow-[0_0_30px_rgba(234,179,8,0.4)] transition-transform hover:scale-105">Play Again</button>
+          </div>
+        )}
       </div>
     );
   };
+
+
+
+
 
   const WordListenerGame = () => {
     const [score, setScore] = useState(0);
@@ -815,9 +857,31 @@ const Games = () => {
     const [options, setOptions] = useState([]);
     const [target, setTarget] = useState('');
     const [gameStatus, setGameStatus] = useState('waiting');
+    const [timeLeft, setTimeLeft] = useState(15);
+    const [scorePop, setScorePop] = useState(false);
     
-    // Large vocabulary
-    const allWords = ['Elephant', 'Giraffe', 'Kangaroo', 'Monkey', 'Tiger', 'Zebra', 'Dolphin', 'Penguin', 'Octopus', 'Butterfly', 'Cheetah', 'Falcon', 'Laptop', 'Rocket', 'Guitar', 'Jungle', 'Pyramid', 'Volcano', 'Meteor', 'Galaxy'];
+    const allWords = [
+      'Cat', 'Dog', 'Sun', 'Run', 'Red', 'Bus', 'Car', 'Pen',
+      'Apple', 'Water', 'Table', 'Chair', 'House', 'Train', 'Cloud', 'Music',
+      'Elephant', 'Computer', 'Mountain', 'Hospital', 'Umbrella', 'Telescope',
+      'Fascinate', 'Exaggerate', 'Phenomenon', 'Hypothesis', 'Vocabulary', 'Architecture',
+      'Incomprehensible', 'Uncharacteristically', 'Onomatopoeia', 'Philosophical', 'Psychological', 'Extraterrestrial'
+    ];
+
+    const generateLevel = (lvl) => {
+      const maxIndex = Math.min(Math.floor((lvl / 50) * allWords.length) + 6, allWords.length);
+      const minIndex = Math.max(0, maxIndex - 12);
+      const availableWords = allWords.slice(minIndex, maxIndex);
+      const optCount = Math.min(4 + Math.floor(lvl / 10), 8);
+      const shuffled = [...availableWords].sort(() => 0.5 - Math.random());
+      let selected = shuffled.slice(0, optCount);
+      if (selected.length < optCount) {
+         const extra = [...allWords].sort(() => 0.5 - Math.random()).filter(w => !selected.includes(w));
+         selected = [...selected, ...extra.slice(0, optCount - selected.length)];
+      }
+      const targetWord = selected[Math.floor(Math.random() * selected.length)];
+      return { selected, targetWord };
+    };
 
     const playAudio = (text, rate = 0.9) => {
       if(window.speechSynthesis) {
@@ -828,30 +892,36 @@ const Games = () => {
       }
     };
 
-    const nextRound = () => {
-      const shuffled = [...allWords].sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, 4);
-      const targetWord = selected[Math.floor(Math.random() * 4)];
+    const nextRound = (currentLvl) => {
+      if (currentLvl > 50) {
+        setGameStatus('completed');
+        return;
+      }
+      const { selected, targetWord } = generateLevel(currentLvl);
       setOptions(selected);
       setTarget(targetWord);
+      setTimeLeft(Math.max(15 - Math.floor(currentLvl / 4), 5));
       setGameStatus('playing');
-      setTimeout(() => playAudio(targetWord), 500);
+      setTimeout(() => playAudio(targetWord, Math.min(0.8 + (currentLvl * 0.01), 1.2)), 500);
     };
 
-    const startGame = () => {
-      setScore(0); setLevel(1);
-      nextRound();
+    const startGame = (startLvl = 1) => {
+      setScore(s => startLvl === 1 ? 0 : s);
+      setLevel(startLvl);
+      nextRound(startLvl);
     };
 
     const handleSelect = (word) => {
       if(gameStatus !== 'playing') return;
       if(word === target) {
         setScore(s => s + 10);
+        setScorePop(true);
+        setTimeout(() => setScorePop(false), 1000);
         setGameStatus('correct');
         playAudio("Correct! " + word, 1.2);
         setTimeout(() => {
           setLevel(l => l + 1);
-          nextRound();
+          nextRound(level + 1);
         }, 1500);
       } else {
         playAudio("Wrong. The word was " + target, 1.0);
@@ -859,58 +929,100 @@ const Games = () => {
       }
     };
 
+    React.useEffect(() => {
+      if (gameStatus !== 'playing') return;
+      const timer = setInterval(() => {
+        setTimeLeft(t => {
+          if (t <= 1) {
+            clearInterval(timer);
+            setGameStatus('failed');
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            playAudio("Time is up", 1.0);
+            return 0;
+          }
+          return t - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }, [gameStatus]);
+
     React.useEffect(() => { return () => { if(window.speechSynthesis) window.speechSynthesis.cancel(); }; }, []);
 
     return (
-      <div className="bg-slate-900 p-6 md:p-10 rounded-[2.5rem] border border-slate-800 w-full max-w-4xl mx-auto shadow-[0_0_80px_rgba(34,197,94,0.15)] transition-all">
-        <div className="flex justify-between items-center mb-10 text-white">
+      <div className="bg-slate-900 p-6 md:p-10 rounded-[2.5rem] border border-slate-800 w-full max-w-4xl mx-auto shadow-[0_0_80px_rgba(34,197,94,0.15)] transition-all relative overflow-hidden">
+        <div className="flex justify-between items-center mb-10 text-white relative z-10">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-green-500/10 rounded-2xl border border-green-500/20">
               <Headphones className="w-8 h-8 text-green-500" />
             </div>
-            <div>
+            <div className="relative">
               <div className="text-slate-500 text-xs font-black uppercase tracking-widest">Score</div>
-              <div className="text-4xl font-black">{score}</div>
+              <div className="text-4xl font-black flex items-center gap-2">
+                {score}
+                {scorePop && <span className="absolute -right-12 top-0 text-green-400 font-bold text-2xl animate-ping">+10</span>}
+              </div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">Round</div>
-            <span className="bg-green-600 text-white px-6 py-2 rounded-xl text-lg font-black border border-green-400/30">RND {level}</span>
+          <div className="text-right flex flex-col items-end">
+            <div className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">Level {level}/50</div>
+            <div className="w-32 h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
+              <div className="h-full bg-green-500 transition-all duration-500" style={{width: `${(level/50)*100}%`}}></div>
+            </div>
+            {gameStatus === 'playing' && (
+              <div className="text-xs font-bold px-2 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg">
+                Time Left: <span className="font-black">{timeLeft}s</span>
+              </div>
+            )}
           </div>
         </div>
+
+        {gameStatus === 'playing' && (
+          <div className="w-full h-1 bg-slate-800 absolute top-0 left-0">
+            <div className="h-full bg-green-500 transition-all duration-1000 linear" style={{ width: `${(timeLeft / (Math.max(15 - Math.floor(level / 4), 5))) * 100}%` }}></div>
+          </div>
+        )}
 
         {gameStatus === 'waiting' && (
           <div className="text-center py-20 px-4 bg-slate-950 rounded-[2rem] border border-slate-800">
             <Ear className="w-20 h-20 text-green-500 mx-auto mb-6 animate-pulse" />
             <h2 className="text-3xl font-black text-white mb-2">Word Listener</h2>
-            <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">System will speak a single word aloud. You have to identify and select the correct word from the options.</p>
-            <button onClick={startGame} className="bg-green-600 hover:bg-green-500 text-white px-8 md:px-10 py-4 rounded-xl font-black text-xl flex items-center gap-2 mx-auto"><Play className="fill-current w-5 h-5"/> Start Challenge</button>
+            <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">Listen to the spoken word and select the correct option before time runs out!</p>
+            <button onClick={() => startGame(1)} className="bg-green-600 hover:bg-green-500 text-white px-8 md:px-10 py-4 rounded-xl font-black text-xl flex items-center gap-2 mx-auto shadow-[0_0_30px_rgba(34,197,94,0.4)] transition-transform hover:scale-105"><Play className="fill-current w-5 h-5"/> Start Challenge</button>
           </div>
         )}
 
         {gameStatus === 'failed' && (
           <div className="text-center py-20 px-4 bg-slate-950 rounded-[2rem] border border-red-500/30 bg-red-500/5">
-            <h2 className="text-4xl font-black text-red-500 mb-2">Incorrect!</h2>
-            <p className="text-slate-400 mb-8 max-w-md mx-auto">The word was "{target}". You scored {score} points.</p>
-            <button onClick={startGame} className="bg-red-600 hover:bg-red-500 text-white px-10 py-4 rounded-xl font-black text-xl mx-auto">Try Again</button>
+            <h2 className="text-4xl font-black text-red-500 mb-2">{timeLeft === 0 ? "Time's Up!" : "Incorrect!"}</h2>
+            <p className="text-slate-400 mb-8 max-w-md mx-auto">{timeLeft === 0 ? `You couldn't answer in time.` : `The word was "${target}".`} You reached Level {level} with {score} points.</p>
+            <button onClick={() => startGame(1)} className="bg-red-600 hover:bg-red-500 text-white px-10 py-4 rounded-xl font-black text-xl mx-auto shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform hover:scale-105">Restart from Level 1</button>
+          </div>
+        )}
+        
+        {gameStatus === 'completed' && (
+          <div className="text-center py-20 px-4 bg-slate-950 rounded-[2rem] border border-yellow-500/50 shadow-[inset_0_0_100px_rgba(234,179,8,0.2)]">
+            <Trophy className="w-24 h-24 text-yellow-500 mx-auto mb-6" />
+            <h2 className="text-5xl font-black text-yellow-400 mb-4">Vocabulary Master!</h2>
+            <p className="text-slate-300 text-lg mb-8 max-w-md mx-auto">You conquered all 50 levels of Word Listener! Final score: {score}.</p>
+            <button onClick={() => startGame(1)} className="bg-yellow-600 hover:bg-yellow-500 text-white px-10 py-4 rounded-xl font-black text-xl mx-auto shadow-[0_0_30px_rgba(234,179,8,0.4)] transition-transform hover:scale-105">Play Again</button>
           </div>
         )}
 
         {(gameStatus === 'playing' || gameStatus === 'correct') && (
           <div>
             <div className="mb-8 text-center">
-               <button onClick={() => playAudio(target)} className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-full border border-slate-700 font-bold flex items-center gap-2 mx-auto transition-transform active:scale-95"><Ear className="w-5 h-5"/> Repeat Audio</button>
-               {gameStatus === 'correct' && <div className="text-green-400 font-bold mt-4 text-xl animate-bounce">Correct! Get ready...</div>}
+               <button onClick={() => playAudio(target, Math.min(0.8 + (level * 0.01), 1.2))} className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-full border border-slate-700 font-bold flex items-center gap-2 mx-auto transition-transform active:scale-95"><Ear className="w-5 h-5"/> Repeat Audio</button>
+               {gameStatus === 'correct' && <div className="text-green-400 font-bold mt-4 text-xl animate-bounce">Correct! Next level...</div>}
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              {options.map(w => (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {options.map((w, idx) => (
                 <button
-                  key={w}
+                  key={idx}
                   onClick={() => handleSelect(w)}
                   disabled={gameStatus !== 'playing'}
-                  className={`aspect-video flex items-center justify-center text-2xl font-bold rounded-2xl transition-all border-4 ${gameStatus === 'playing' ? 'bg-slate-800 hover:bg-green-600 hover:border-green-400 border-slate-700 text-white shadow-xl active:scale-95 cursor-pointer' : (w === target ? 'bg-green-600 border-green-400 text-white shadow-xl' : 'bg-slate-950 border-slate-900 text-slate-600 opacity-50')}`}
+                  className={`py-6 px-2 text-center flex items-center justify-center text-xl font-bold rounded-2xl transition-all border-4 ${gameStatus === 'playing' ? 'bg-slate-800 hover:bg-green-600 hover:border-green-400 border-slate-700 text-white shadow-xl active:scale-95 cursor-pointer' : (w === target ? 'bg-green-600 border-green-400 text-white shadow-xl' : 'bg-slate-950 border-slate-900 text-slate-600 opacity-50')}`}
                 >
-                  {w}
+                  <span className="break-all">{w}</span>
                 </button>
               ))}
             </div>
@@ -927,8 +1039,47 @@ const Games = () => {
     const [input, setInput] = useState('');
     const [gameStatus, setGameStatus] = useState('waiting');
     
-    // Short Sentences
-    const sentences = ['The sun is shining', 'A quick brown fox', 'Hello world', 'I love to read books', 'Water is essential', 'Technology moves fast', 'Always listen carefully', 'Practice makes perfect', 'Birds sing in the morning'];
+    const sentences = [
+      "Cat", "Dog", "Sun", "Run", "Red", "Bus", "Car", "Pen",
+      "Apple", "Water", "Table", "Chair", "House", "Train", "Cloud", "Music",
+      "Red Car", "Fast Run", "Big Bus", "Blue Pen", "Sweet Apple", "Cold Water", "Round Table", "High Chair",
+      "I run fast.", "The cat sleeps.", "She reads books.", "We eat apples.", "He drives a car.",
+      "The sun is hot.", "They play outside.", "Water is clear.", "Birds fly high.", "Look at the sky.",
+      "The quick brown fox jumps.", "She walked to the store today.", "He is reading a good book.",
+      "They are playing soccer in the park.", "The weather is very nice today.", "I need to buy some milk.",
+      "Please close the door behind you.", "The train arrives at six o'clock.", "My favorite color is bright blue.",
+      "We went to the beach yesterday.",
+      "The unexpected rain caused a significant delay in our journey.",
+      "Scientific research requires a great deal of patience and dedication.",
+      "She elegantly played the piano during the evening concert.",
+      "The architect designed a building that is both functional and beautiful.",
+      "Environmental conservation is crucial for future generations.",
+      "He explained the complicated theory with remarkable clarity.",
+      "The committee reached a unanimous decision after hours of debate.",
+      "Exploring the vastness of space has always fascinated humanity.",
+      "Her comprehensive understanding of the subject impressed the professor.",
+      "The new software update includes several important security features.",
+      "The intricate mechanisms of a mechanical watch demand meticulous craftsmanship.",
+      "Global economic fluctuations often have profound impacts on local markets.",
+      "The philosophical implications of artificial intelligence continue to spark intense debate.",
+      "Sustainable agricultural practices are essential for long-term ecological balance.",
+      "The symphony orchestra performed a mesmerizing rendition of the classical masterpiece.",
+      "Technological advancements have exponentially accelerated the pace of communication.",
+      "The protagonist's psychological journey is the central theme of the novel.",
+      "Rigorous methodology is the foundation of any credible scientific investigation.",
+      "The intricate diplomatic negotiations finally yielded a comprehensive peace treaty.",
+      "The phenomenon of quantum entanglement challenges our fundamental understanding of physics.",
+      "The cardiovascular system relies on a complex network of arteries, veins, and capillaries.",
+      "Jurisprudence requires an objective interpretation of established constitutional principles.",
+      "The socioeconomic ramifications of the policy shift were immediately apparent to the analysts.",
+      "Epistemological inquiries delve into the nature, origin, and limits of human knowledge.",
+      "The astrophysical observations corroborated the previously untested theoretical models.",
+      "The pharmacological efficacy of the novel compound exceeded initial clinical expectations.",
+      "Linguistic anthropology examines how language influences social life and cultural identity.",
+      "The macroeconomic stabilization program aimed to mitigate the effects of hyperinflation.",
+      "Neuroplasticity demonstrates the brain's remarkable ability to reorganize itself.",
+      "The intricate choreography seamlessly integrated classical ballet with contemporary movements."
+    ];
 
     const playAudio = (text, rate = 0.8) => {
       if(window.speechSynthesis) {
@@ -939,17 +1090,22 @@ const Games = () => {
       }
     };
 
-    const nextRound = () => {
-      const targetSentence = sentences[Math.floor(Math.random() * sentences.length)];
+    const nextRound = (currentLvl) => {
+      if (currentLvl > 50) {
+        setGameStatus('completed');
+        return;
+      }
+      const targetSentence = sentences[currentLvl - 1];
       setTarget(targetSentence);
       setInput('');
       setGameStatus('playing');
-      setTimeout(() => playAudio(targetSentence), 500);
+      setTimeout(() => playAudio(targetSentence, Math.min(0.8 + (currentLvl * 0.005), 1.0)), 500);
     };
 
-    const startGame = () => {
-      setScore(0); setLevel(1);
-      nextRound();
+    const startGame = (startLvl = 1) => {
+      setScore(s => startLvl === 1 ? 0 : s);
+      setLevel(startLvl);
+      nextRound(startLvl);
     };
 
     const handleSubmit = (e) => {
@@ -965,10 +1121,10 @@ const Games = () => {
         playAudio("Excellent", 1.2);
         setTimeout(() => {
           setLevel(l => l + 1);
-          nextRound();
+          nextRound(level + 1);
         }, 1500);
       } else {
-        playAudio("Incorrect. It was: " + target, 1.0);
+        playAudio("Incorrect.", 1.0);
         setGameStatus('failed');
       }
     };
@@ -987,9 +1143,11 @@ const Games = () => {
               <div className="text-4xl font-black">{score}</div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">Sentence</div>
-            <span className="bg-red-600 text-white px-6 py-2 rounded-xl text-lg font-black border border-red-400/30">#{level}</span>
+          <div className="text-right flex flex-col items-end">
+            <div className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">Level {level}/50</div>
+            <div className="w-32 h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
+              <div className="h-full bg-red-500" style={{width: `${(level/50)*100}%`}}></div>
+            </div>
           </div>
         </div>
 
@@ -997,8 +1155,8 @@ const Games = () => {
           <div className="text-center py-20 px-4 bg-slate-950 rounded-[2rem] border border-slate-800">
             <MessageSquare className="w-20 h-20 text-red-500 mx-auto mb-6 animate-pulse" />
             <h2 className="text-3xl font-black text-white mb-2">Dictation Hero</h2>
-            <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">Listen to the spoken sentence carefully and type it out exactly as you hear it.</p>
-            <button onClick={startGame} className="bg-red-600 hover:bg-red-500 text-white px-8 md:px-10 py-4 rounded-xl font-black text-xl flex items-center gap-2 mx-auto"><Play className="fill-current w-5 h-5"/> Start Dictation</button>
+            <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">Listen to the spoken sentence and type it exactly. Complete all 50 increasingly complex sentences!</p>
+            <button onClick={() => startGame(1)} className="bg-red-600 hover:bg-red-500 text-white px-8 md:px-10 py-4 rounded-xl font-black text-xl flex items-center gap-2 mx-auto shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform hover:scale-105"><Play className="fill-current w-5 h-5"/> Start Dictation</button>
           </div>
         )}
 
@@ -1007,14 +1165,23 @@ const Games = () => {
              <h2 className="text-4xl font-black text-red-500 mb-2">Typo Detected!</h2>
              <p className="text-slate-400 mb-2 max-w-md mx-auto">You typed: <span className="text-white">"{input}"</span></p>
              <p className="text-slate-400 mb-8 max-w-md mx-auto">Correct was: <span className="text-green-400 font-bold">"{target}"</span></p>
-             <button onClick={startGame} className="bg-red-600 hover:bg-red-500 text-white px-10 py-4 rounded-xl font-black text-xl mx-auto">Try Again</button>
+             <button onClick={() => startGame(1)} className="bg-red-600 hover:bg-red-500 text-white px-10 py-4 rounded-xl font-black text-xl mx-auto shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform hover:scale-105">Restart from Level 1</button>
+          </div>
+        )}
+
+        {gameStatus === 'completed' && (
+          <div className="text-center py-20 px-4 bg-slate-950 rounded-[2rem] border border-yellow-500/50 shadow-[inset_0_0_100px_rgba(234,179,8,0.2)]">
+            <Trophy className="w-24 h-24 text-yellow-500 mx-auto mb-6" />
+            <h2 className="text-5xl font-black text-yellow-400 mb-4">Dictation Legend!</h2>
+            <p className="text-slate-300 text-lg mb-8 max-w-md mx-auto">You successfully transcribed all 50 sentences flawlessly! Final score: {score}.</p>
+            <button onClick={() => startGame(1)} className="bg-yellow-600 hover:bg-yellow-500 text-white px-10 py-4 rounded-xl font-black text-xl mx-auto shadow-[0_0_30px_rgba(234,179,8,0.4)] transition-transform hover:scale-105">Play Again</button>
           </div>
         )}
 
         {(gameStatus === 'playing' || gameStatus === 'correct') && (
           <div>
             <div className="mb-8 text-center flex flex-col gap-4 items-center">
-               <button onClick={() => playAudio(target, 0.8)} className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-full border border-slate-700 font-bold flex items-center gap-2 mx-auto transition-transform active:scale-95"><Ear className="w-5 h-5"/> Play Normal</button>
+               <button onClick={() => playAudio(target, Math.min(0.8 + (level * 0.005), 1.0))} className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-full border border-slate-700 font-bold flex items-center gap-2 mx-auto transition-transform active:scale-95"><Ear className="w-5 h-5"/> Play Normal</button>
                <button onClick={() => playAudio(target, 0.5)} className="bg-slate-950 hover:bg-slate-800 text-slate-400 px-6 py-2 rounded-full border border-slate-800 font-bold flex items-center gap-2 mx-auto text-sm transition-transform active:scale-95"><Clock className="w-4 h-4"/> Play Slow</button>
                {gameStatus === 'correct' && <div className="text-green-400 font-bold mt-2 text-xl animate-bounce">Perfect Spelling!</div>}
             </div>
@@ -1028,6 +1195,7 @@ const Games = () => {
                 className="w-full bg-slate-950 border-2 border-slate-700 text-white px-6 py-5 rounded-2xl focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none text-2xl font-medium shadow-inner transition-colors"
                 autoFocus
                 autoComplete="off"
+                spellCheck="false"
               />
               <button 
                 type="submit"
@@ -1044,25 +1212,20 @@ const Games = () => {
   };
 
   if (activeGame) {
-    const wordListenerTitles = ['Word Listener', 'Listen & Find', 'Story Echoes', 'Audio Maze Runner', 'Code Breaker (Speech)'];
-    const dictationTitles = ['Dictation Hero', 'Sound Scramble', 'Phonics Pop', 'Sentence Builder', 'Logic Grid (Listen)'];
-    const memoryTitles = ['Audio Memory Match', 'Vowel Catch', 'Audio Bear Logic', 'Pattern Recall', 'Quantum Audio'];
-
-    const isWordListener = wordListenerTitles.includes(activeGame.title);
-    const isDictation = dictationTitles.includes(activeGame.title);
-    const isMemory = memoryTitles.includes(activeGame.title);
-    
-    // We cover all games by mapping them by category index if they don't exactly match the lists.
     const getActiveComponent = () => {
-      if (isWordListener || activeGame.title.includes('Word') || activeGame.title.includes('Listener')) return <WordListenerGame />;
-      if (isDictation || activeGame.title.includes('Dictation') || activeGame.title.includes('Scramble')) return <DictationGame />;
-      if (isMemory || activeGame.title.includes('Memory') || activeGame.title.includes('Audio')) return <AudioMemoryGame />;
-      
-      // Fallback pseudo-random mapping based on ID so every game has a playable engine
-      const fallbackId = parseInt(activeGame.id.split('-')[1]);
-      if (fallbackId % 3 === 0) return <WordListenerGame />;
-      if (fallbackId % 3 === 1) return <DictationGame />;
-      return <AudioMemoryGame />;
+      switch (activeGame.title) {
+        case 'Audio Memory Match': return <AudioMemoryGame />;
+        case 'Word Listener': return <WordListenerGame />;
+        case 'Dictation Hero': return <DictationGame />;
+        case 'Sound Scramble': return <SoundScrambleGame />;
+        case 'Phonics Pop': return <PhonicsPopGame />;
+        case 'Listen & Find': return <ListenFindGame />;
+        case 'Story Echoes': return <StoryEchoesGame />;
+        case 'Sentence Builder': return <SentenceBuilderGame />;
+        case 'Pattern Recall': return <PatternRecallGame />;
+        case 'Quantum Audio': return <QuantumAudioGame />;
+        default: return <AudioMemoryGame />;
+      }
     };
 
     return (
