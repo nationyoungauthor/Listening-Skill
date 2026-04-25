@@ -660,24 +660,35 @@ const Courses = () => {
 };
 
 const Games = () => {
+  const [selectedClassLevel, setSelectedClassLevel] = useState('All Levels');
+
+  const classesList = [
+    'All Levels', 'NC', 'LKG', 'UKG', 'Class I', 'Class II', 
+    'Class III', 'Class IV', 'Class V', 'Class VI', 'Class VII', 
+    'Class VIII', 'Class IX', 'Class X'
+  ];
+
   const allGames = [
-    { id: 'g1', title: 'Audio Memory Match', category: 'Memory', difficulty: 'Beginner', img: mathGameImg },
-    { id: 'g2', title: 'Word Listener', category: 'Word Games', difficulty: 'Beginner', img: wordListenerImg },
-    { id: 'g3', title: 'Dictation Hero', category: 'Word Games', difficulty: 'Intermediate', img: dictationHeroImg },
-    { id: 'g4', title: 'Sound Scramble', category: 'Puzzle', difficulty: 'Intermediate', img: heroImg },
-    { id: 'g5', title: 'Phonics Pop', category: 'Arcade', difficulty: 'Beginner', img: progImg },
-    { id: 'g6', title: 'Listen & Find', category: 'Logic', difficulty: 'Beginner', img: designImg },
-    { id: 'g7', title: 'Story Echoes', category: 'Memory', difficulty: 'Intermediate', img: mathGameImg },
-    { id: 'g8', title: 'Sentence Builder', category: 'Strategy', difficulty: 'Advanced', img: logicGameImg },
-    { id: 'g9', title: 'Pattern Recall', category: 'Brain Training', difficulty: 'Advanced', img: codingGameImg },
-    { id: 'g10', title: 'Quantum Audio', category: 'Logic', difficulty: 'Expert', img: designImg }
+    { id: 'g1', title: 'Audio Memory Match', category: 'Memory', difficulty: 'Beginner', img: mathGameImg, levels: ['NC', 'LKG', 'UKG', 'Class I', 'Class II'] },
+    { id: 'g2', title: 'Word Listener', category: 'Word Games', difficulty: 'Beginner', img: wordListenerImg, levels: ['NC', 'LKG', 'UKG', 'Class I', 'Class II', 'Class III'] },
+    { id: 'g3', title: 'Dictation Hero', category: 'Word Games', difficulty: 'Intermediate', img: dictationHeroImg, levels: ['Class III', 'Class IV', 'Class V', 'Class VI', 'Class VII'] },
+    { id: 'g4', title: 'Sound Scramble', category: 'Puzzle', difficulty: 'Intermediate', img: heroImg, levels: ['Class I', 'Class II', 'Class III', 'Class IV', 'Class V'] },
+    { id: 'g5', title: 'Phonics Pop', category: 'Arcade', difficulty: 'Beginner', img: progImg, levels: ['NC', 'LKG', 'UKG', 'Class I'] },
+    { id: 'g6', title: 'Listen & Find', category: 'Logic', difficulty: 'Beginner', img: designImg, levels: ['NC', 'LKG', 'UKG', 'Class I', 'Class II', 'Class III'] },
+    { id: 'g7', title: 'Story Echoes', category: 'Memory', difficulty: 'Intermediate', img: mathGameImg, levels: ['Class V', 'Class VI', 'Class VII', 'Class VIII', 'Class IX'] },
+    { id: 'g8', title: 'Sentence Builder', category: 'Strategy', difficulty: 'Advanced', img: logicGameImg, levels: ['Class IV', 'Class V', 'Class VI', 'Class VII', 'Class VIII'] },
+    { id: 'g9', title: 'Pattern Recall', category: 'Brain Training', difficulty: 'Advanced', img: codingGameImg, levels: ['Class VI', 'Class VII', 'Class VIII', 'Class IX', 'Class X'] },
+    { id: 'g10', title: 'Quantum Audio', category: 'Logic', difficulty: 'Expert', img: designImg, levels: ['Class VIII', 'Class IX', 'Class X'] }
   ].map(game => ({
     ...game,
-    classLevel: 'All Levels',
+    classLevel: game.levels.includes('NC') ? `${game.levels[0]} - ${game.levels[game.levels.length-1]}` : `${game.levels[0]} to ${game.levels[game.levels.length-1]}`,
     rating: (4.5 + Math.random() * 0.5).toFixed(1)
   }));
 
-  const filteredGames = allGames;
+  const filteredGames = useMemo(() => {
+    if (selectedClassLevel === 'All Levels') return allGames;
+    return allGames.filter(g => g.levels.includes(selectedClassLevel));
+  }, [selectedClassLevel]);
 
   // -- Playable Games Logic --
   const [activeGame, setActiveGame] = useState(null);
@@ -1275,8 +1286,20 @@ const Games = () => {
           <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Level-Up Academy</h1>
           <p className="text-slate-400">Master your listening skills through 10 highly focused, interactive challenges.</p>
         </div>
-        <div className="bg-slate-900/50 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-800 text-xs font-bold text-slate-400">
-          Total Games: <span className="text-white">10</span>
+        <div className="flex flex-col sm:flex-row items-center gap-4 mt-4 md:mt-0">
+          <div className="relative w-full sm:w-auto">
+            <select 
+              value={selectedClassLevel} 
+              onChange={(e) => setSelectedClassLevel(e.target.value)}
+              className="w-full sm:w-auto appearance-none bg-slate-950 border border-slate-800 text-white px-6 py-3 pr-12 rounded-xl text-sm font-bold focus:outline-none focus:border-blue-500 cursor-pointer shadow-lg"
+            >
+              {classesList.map(c => <option key={c} value={c}>{c === 'All Levels' ? 'Filter by Class' : c}</option>)}
+            </select>
+            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          </div>
+          <div className="bg-slate-900/50 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-800 text-xs font-bold text-slate-400">
+            Available Games: <span className="text-white">{filteredGames.length}</span>
+          </div>
         </div>
       </div>
       
