@@ -12,7 +12,7 @@ import {
   ChevronRight, Star, Gamepad2, Trophy, Clock, Filter, 
   ChevronDown, GraduationCap, Calendar, LayoutGrid, Award, ArrowLeft, Play, Square,
   Headphones, Brain, MessageSquare, TrendingUp, CheckCircle2, Globe, Ear,
-  Mail, MapPin, Phone
+  Mail, MapPin, Phone, Menu, X
 } from 'lucide-react';
 
 // Images
@@ -36,34 +36,54 @@ import {
 
 // --- Shared Components ---
 
-const Navbar = () => (
-  <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center h-16">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <Rocket className="text-white w-5 h-5" />
+const Navbar = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <Link to="/" className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Rocket className="text-white w-5 h-5" />
+            </div>
+            <span className="text-xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+              Listening Skill
+            </span>
+          </Link>
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium">
+            <NavLink to="/" className={({ isActive }) => isActive ? "text-blue-500" : "text-slate-300 hover:text-white transition-colors"}>Home</NavLink>
+            <NavLink to="/courses" className={({ isActive }) => isActive ? "text-blue-500" : "text-slate-300 hover:text-white transition-colors"}>Courses</NavLink>
+            <NavLink to="/games" className={({ isActive }) => isActive ? "text-blue-500" : "text-slate-300 hover:text-white transition-colors"}>Games</NavLink>
+            <NavLink to="/skills" className={({ isActive }) => isActive ? "text-blue-500" : "text-slate-300 hover:text-white transition-colors"}>Skills</NavLink>
+            <NavLink to="/test" className={({ isActive }) => isActive ? "text-blue-500" : "text-slate-300 hover:text-white transition-colors"}>Test</NavLink>
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-            Listening Skill
-          </span>
-        </Link>
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-          <NavLink to="/" className={({ isActive }) => isActive ? "text-blue-500" : "text-slate-300 hover:text-white transition-colors"}>Home</NavLink>
-          <NavLink to="/courses" className={({ isActive }) => isActive ? "text-blue-500" : "text-slate-300 hover:text-white transition-colors"}>Courses</NavLink>
-          <NavLink to="/games" className={({ isActive }) => isActive ? "text-blue-500" : "text-slate-300 hover:text-white transition-colors"}>Games</NavLink>
-          <NavLink to="/skills" className={({ isActive }) => isActive ? "text-blue-500" : "text-slate-300 hover:text-white transition-colors"}>Skills</NavLink>
-          <NavLink to="/test" className={({ isActive }) => isActive ? "text-blue-500" : "text-slate-300 hover:text-white transition-colors"}>Test</NavLink>
-        </div>
-        <div className="flex items-center gap-4">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition-all">
-            Get Started
-          </button>
+          <div className="flex items-center gap-4">
+            <button className="hidden md:block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition-all">
+              Get Started
+            </button>
+            <button onClick={() => setIsOpen(!isOpen)} className="md:hidden text-slate-300 hover:text-white focus:outline-none">
+              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  </nav>
-);
+      
+      {/* Mobile Menu */}
+      {isOpen && (
+        <div className="md:hidden bg-slate-950 border-b border-slate-800 animate-fadeIn">
+          <div className="px-2 pt-2 pb-4 space-y-1 text-sm font-medium flex flex-col">
+            <NavLink to="/" onClick={() => setIsOpen(false)} className={({ isActive }) => `px-4 py-3 rounded-xl transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-900 hover:text-white'}`}>Home</NavLink>
+            <NavLink to="/courses" onClick={() => setIsOpen(false)} className={({ isActive }) => `px-4 py-3 rounded-xl transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-900 hover:text-white'}`}>Courses</NavLink>
+            <NavLink to="/games" onClick={() => setIsOpen(false)} className={({ isActive }) => `px-4 py-3 rounded-xl transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-900 hover:text-white'}`}>Games</NavLink>
+            <NavLink to="/skills" onClick={() => setIsOpen(false)} className={({ isActive }) => `px-4 py-3 rounded-xl transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-900 hover:text-white'}`}>Skills</NavLink>
+            <NavLink to="/test" onClick={() => setIsOpen(false)} className={({ isActive }) => `px-4 py-3 rounded-xl transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-900 hover:text-white'}`}>Test</NavLink>
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+};
 
 const Footer = () => (
   <footer className="relative z-20 bg-slate-950 border-t border-slate-900 pt-20 pb-10 mt-auto">
