@@ -700,8 +700,14 @@ const Games = () => {
   const [activeGame, setActiveGame] = useState(null);
 
   const AudioMemoryGame = () => {
-    const [level, setLevel] = useState(1);
-    const [score, setScore] = useState(0);
+    const [level, setLevel] = useState(() => {
+      const saved = localStorage.getItem('skillkid_lvl_audiomemory');
+      return saved ? parseInt(saved, 10) : 1;
+    });
+    const [score, setScore] = useState(() => {
+      const saved = localStorage.getItem('skillkid_score_audiomemory');
+      return saved ? parseInt(saved, 10) : 0;
+    });
     const [sequence, setSequence] = useState([]);
     const [options, setOptions] = useState([]);
     const [playerTurn, setPlayerTurn] = useState(false);
@@ -780,13 +786,16 @@ const Games = () => {
       }
 
       if (word === sequence[playerIndex]) {
-        setScore(s => s + 10);
+        const newScore = score + 10;
+        setScore(newScore);
+        localStorage.setItem('skillkid_score_audiomemory', newScore.toString());
         if (playerIndex + 1 === sequence.length) {
           setPlayerTurn(false);
           if (level >= 50) {
             setGameStatus('game_completed');
           } else {
             setGameStatus('level_clear');
+            localStorage.setItem('skillkid_lvl_audiomemory', (level + 1).toString());
           }
         } else {
           setPlayerIndex(playerIndex + 1);
@@ -830,7 +839,12 @@ const Games = () => {
             <Ear className="w-20 h-20 text-blue-500 mx-auto mb-6 animate-pulse" />
             <h2 className="text-3xl font-black text-white mb-2">Audio Memory Match</h2>
             <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">Listen carefully to the sequence of spoken words. Progress through 50 increasingly difficult levels. Don't repeat mistakes!</p>
-            <button onClick={() => startGame(1)} className="bg-blue-600 hover:bg-blue-500 text-white px-8 md:px-10 py-4 rounded-xl font-black text-xl flex items-center gap-2 mx-auto shadow-[0_0_30px_rgba(37,99,235,0.4)] transition-transform hover:scale-105"><Play className="fill-current w-5 h-5"/> Start Game</button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mx-auto">
+              <button onClick={() => startGame(level)} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-black text-xl flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(37,99,235,0.4)] transition-transform hover:scale-105"><Play className="fill-current w-5 h-5"/> Resume Level {level}</button>
+              {level > 1 && (
+                <button onClick={() => { localStorage.removeItem('skillkid_lvl_audiomemory'); localStorage.removeItem('skillkid_score_audiomemory'); startGame(1); }} className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-4 rounded-xl font-bold border border-slate-700 transition-transform hover:scale-105">Reset to Level 1</button>
+              )}
+            </div>
           </div>
         )}
 
@@ -860,7 +874,12 @@ const Games = () => {
           <div className="text-center py-20 px-4 bg-slate-950 rounded-[2rem] border border-red-500/30 bg-red-500/5">
             <h2 className="text-4xl font-black text-red-500 mb-2">Memory Failed!</h2>
             <p className="text-slate-400 mb-8 max-w-md mx-auto">You clicked the wrong word. You reached Level {level} with a score of {score}.</p>
-            <button onClick={() => startGame(1)} className="bg-red-600 hover:bg-red-500 text-white px-10 py-4 rounded-xl font-black text-xl mx-auto shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform hover:scale-105">Restart from Level 1</button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mx-auto">
+              <button onClick={() => startGame(level)} className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white px-10 py-4 rounded-xl font-black text-xl shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform hover:scale-105">Try Level {level} Again</button>
+              {level > 1 && (
+                <button onClick={() => { localStorage.removeItem('skillkid_lvl_audiomemory'); localStorage.removeItem('skillkid_score_audiomemory'); startGame(1); }} className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-300 px-8 py-4 rounded-xl font-bold border border-slate-700 transition-transform hover:scale-105">Reset to Level 1</button>
+              )}
+            </div>
           </div>
         )}
 
@@ -889,8 +908,14 @@ const Games = () => {
 
 
   const WordListenerGame = () => {
-    const [score, setScore] = useState(0);
-    const [level, setLevel] = useState(1);
+    const [level, setLevel] = useState(() => {
+      const saved = localStorage.getItem('skillkid_lvl_wordlistener');
+      return saved ? parseInt(saved, 10) : 1;
+    });
+    const [score, setScore] = useState(() => {
+      const saved = localStorage.getItem('skillkid_score_wordlistener');
+      return saved ? parseInt(saved, 10) : 0;
+    });
     const [options, setOptions] = useState([]);
     const [target, setTarget] = useState('');
     const [gameStatus, setGameStatus] = useState('waiting');
@@ -951,14 +976,18 @@ const Games = () => {
     const handleSelect = (word) => {
       if(gameStatus !== 'playing') return;
       if(word === target) {
-        setScore(s => s + 10);
+        const newScore = score + 10;
+        setScore(newScore);
+        localStorage.setItem('skillkid_score_wordlistener', newScore.toString());
         setScorePop(true);
         setTimeout(() => setScorePop(false), 1000);
         setGameStatus('correct');
         playAudio("Correct! " + word, 1.2);
         setTimeout(() => {
-          setLevel(l => l + 1);
-          nextRound(level + 1);
+          const nextLvl = level + 1;
+          setLevel(nextLvl);
+          localStorage.setItem('skillkid_lvl_wordlistener', nextLvl.toString());
+          nextRound(nextLvl);
         }, 1500);
       } else {
         playAudio("Wrong. The word was " + target, 1.0);
@@ -1024,7 +1053,12 @@ const Games = () => {
             <Ear className="w-20 h-20 text-green-500 mx-auto mb-6 animate-pulse" />
             <h2 className="text-3xl font-black text-white mb-2">Word Listener</h2>
             <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">Listen to the spoken word and select the correct option before time runs out!</p>
-            <button onClick={() => startGame(1)} className="bg-green-600 hover:bg-green-500 text-white px-8 md:px-10 py-4 rounded-xl font-black text-xl flex items-center gap-2 mx-auto shadow-[0_0_30px_rgba(34,197,94,0.4)] transition-transform hover:scale-105"><Play className="fill-current w-5 h-5"/> Start Challenge</button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mx-auto">
+              <button onClick={() => startGame(level)} className="w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white px-8 py-4 rounded-xl font-black text-xl flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(34,197,94,0.4)] transition-transform hover:scale-105"><Play className="fill-current w-5 h-5"/> Resume Level {level}</button>
+              {level > 1 && (
+                <button onClick={() => { localStorage.removeItem('skillkid_lvl_wordlistener'); localStorage.removeItem('skillkid_score_wordlistener'); startGame(1); }} className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-4 rounded-xl font-bold border border-slate-700 transition-transform hover:scale-105">Reset to Level 1</button>
+              )}
+            </div>
           </div>
         )}
 
@@ -1032,7 +1066,12 @@ const Games = () => {
           <div className="text-center py-20 px-4 bg-slate-950 rounded-[2rem] border border-red-500/30 bg-red-500/5">
             <h2 className="text-4xl font-black text-red-500 mb-2">{timeLeft === 0 ? "Time's Up!" : "Incorrect!"}</h2>
             <p className="text-slate-400 mb-8 max-w-md mx-auto">{timeLeft === 0 ? `You couldn't answer in time.` : `The word was "${target}".`} You reached Level {level} with {score} points.</p>
-            <button onClick={() => startGame(1)} className="bg-red-600 hover:bg-red-500 text-white px-10 py-4 rounded-xl font-black text-xl mx-auto shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform hover:scale-105">Restart from Level 1</button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mx-auto">
+              <button onClick={() => startGame(level)} className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white px-10 py-4 rounded-xl font-black text-xl shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform hover:scale-105">Try Level {level} Again</button>
+              {level > 1 && (
+                <button onClick={() => { localStorage.removeItem('skillkid_lvl_wordlistener'); localStorage.removeItem('skillkid_score_wordlistener'); startGame(1); }} className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-300 px-8 py-4 rounded-xl font-bold border border-slate-700 transition-transform hover:scale-105">Reset to Level 1</button>
+              )}
+            </div>
           </div>
         )}
         
@@ -1070,8 +1109,14 @@ const Games = () => {
   };
 
   const DictationGame = () => {
-    const [score, setScore] = useState(0);
-    const [level, setLevel] = useState(1);
+    const [level, setLevel] = useState(() => {
+      const saved = localStorage.getItem('skillkid_lvl_dictation');
+      return saved ? parseInt(saved, 10) : 1;
+    });
+    const [score, setScore] = useState(() => {
+      const saved = localStorage.getItem('skillkid_score_dictation');
+      return saved ? parseInt(saved, 10) : 0;
+    });
     const [target, setTarget] = useState('');
     const [input, setInput] = useState('');
     const [gameStatus, setGameStatus] = useState('waiting');
@@ -1153,12 +1198,16 @@ const Games = () => {
       const cleanInput = input.toLowerCase().replace(/[^a-z0-9]/g, '');
 
       if(cleanInput === cleanTarget) {
-        setScore(s => s + 20);
+        const newScore = score + 20;
+        setScore(newScore);
+        localStorage.setItem('skillkid_score_dictation', newScore.toString());
         setGameStatus('correct');
         playAudio("Excellent", 1.2);
         setTimeout(() => {
-          setLevel(l => l + 1);
-          nextRound(level + 1);
+          const nextLvl = level + 1;
+          setLevel(nextLvl);
+          localStorage.setItem('skillkid_lvl_dictation', nextLvl.toString());
+          nextRound(nextLvl);
         }, 1500);
       } else {
         playAudio("Incorrect.", 1.0);
@@ -1193,7 +1242,12 @@ const Games = () => {
             <MessageSquare className="w-20 h-20 text-red-500 mx-auto mb-6 animate-pulse" />
             <h2 className="text-3xl font-black text-white mb-2">Dictation Hero</h2>
             <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">Listen to the spoken sentence and type it exactly. Complete all 50 increasingly complex sentences!</p>
-            <button onClick={() => startGame(1)} className="bg-red-600 hover:bg-red-500 text-white px-8 md:px-10 py-4 rounded-xl font-black text-xl flex items-center gap-2 mx-auto shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform hover:scale-105"><Play className="fill-current w-5 h-5"/> Start Dictation</button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mx-auto">
+              <button onClick={() => startGame(level)} className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white px-8 py-4 rounded-xl font-black text-xl flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform hover:scale-105"><Play className="fill-current w-5 h-5"/> Resume Level {level}</button>
+              {level > 1 && (
+                <button onClick={() => { localStorage.removeItem('skillkid_lvl_dictation'); localStorage.removeItem('skillkid_score_dictation'); startGame(1); }} className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-4 rounded-xl font-bold border border-slate-700 transition-transform hover:scale-105">Reset to Level 1</button>
+              )}
+            </div>
           </div>
         )}
 
@@ -1202,7 +1256,12 @@ const Games = () => {
              <h2 className="text-4xl font-black text-red-500 mb-2">Typo Detected!</h2>
              <p className="text-slate-400 mb-2 max-w-md mx-auto">You typed: <span className="text-white">"{input}"</span></p>
              <p className="text-slate-400 mb-8 max-w-md mx-auto">Correct was: <span className="text-green-400 font-bold">"{target}"</span></p>
-             <button onClick={() => startGame(1)} className="bg-red-600 hover:bg-red-500 text-white px-10 py-4 rounded-xl font-black text-xl mx-auto shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform hover:scale-105">Restart from Level 1</button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mx-auto">
+              <button onClick={() => startGame(level)} className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white px-10 py-4 rounded-xl font-black text-xl shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-transform hover:scale-105">Try Level {level} Again</button>
+              {level > 1 && (
+                <button onClick={() => { localStorage.removeItem('skillkid_lvl_dictation'); localStorage.removeItem('skillkid_score_dictation'); startGame(1); }} className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-300 px-8 py-4 rounded-xl font-bold border border-slate-700 transition-transform hover:scale-105">Reset to Level 1</button>
+              )}
+            </div>
           </div>
         )}
 
